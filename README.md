@@ -32,10 +32,10 @@ This repository contains the code and data for the paper:
 │   ├── Dataset_II.csv               # Phase II user study
 │   └── HED_top6.csv                 # Top-K Configurations Dataset
 ├── user_study/                      # Raw user study data & analysis
-│   ├── SurveyDataRound1/           # (see README.md inside)
-│   └── SurveyDataRound2/           # (see README.md inside)
+│   ├── SurveyDataRound1/            # (see README.md inside)
+│   └── SurveyDataRound2/            # (see README.md inside)
 └── HPAA/                            # Output folder for generated samples
-    └── demo.*.csv                   # Pre-generated demo outputs
+    └── *.csv                        # Pre-generated demo outputs
 ```
 
 ---
