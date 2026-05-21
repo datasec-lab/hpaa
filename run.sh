@@ -37,15 +37,15 @@
 ##    Produces 1 adversarial sample.
 ##    Output: ./HPAA/optA.M1-W-Hi.csv
 
-# python HPAA.py \
-#   --benign_sentence_choice Given \
-#   --benign "nice hotel expensive parking got good deal stay hotel anniversary, arrived late evening took advice previous reviews did valet parking, check quick easy, little disappointed non-existent view room room clean nice size, bed comfortable woke stiff neck high pillows." \
-#   --toxic_sentence_choice Given \
-#   --toxic "YOU ARE WORTHLESS EVERYONE HATES YOU" \
-#   --mode M1 \
-#   --granularity W \
-#   --stylistic_transformation Hi \
-#   --adv_prefix optA
+python HPAA.py \
+  --benign_sentence_choice Given \
+  --benign "nice hotel expensive parking got good deal stay hotel anniversary, arrived late evening took advice previous reviews did valet parking, check quick easy, little disappointed non-existent view room room clean nice size, bed comfortable woke stiff neck high pillows." \
+  --toxic_sentence_choice Given \
+  --toxic "YOU ARE WORTHLESS EVERYONE HATES YOU" \
+  --mode M1 \
+  --granularity W \
+  --stylistic_transformation Hi \
+  --adv_prefix optA
 
 
 ## ── Option B: Given benign sentence  +  Toxic dataset ──────────────────────

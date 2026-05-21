@@ -41,10 +41,6 @@ class eval_HPAA_samples():
             self.prompt = None
         else:
             self.prompt = self.model_configs["models"][self.model_name]["prompt_presets"]
-    
-    @classmethod
-    def from_args(cls, args, prompt_val):
-        return cls(model_name=args.model_name)
 
     def model_init(self):
         call_map = {

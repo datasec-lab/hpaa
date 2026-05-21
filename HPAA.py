@@ -1,8 +1,5 @@
 import os, argparse
-env = os.environ.copy()
-env["CUDA_VISIBLE_DEVICES"] = "0"
 
-from itertools import product
 from src.gen_HPAA import gen_HPAA, M, L, S
 from src.eval_HPAA import eval_HPAA
 

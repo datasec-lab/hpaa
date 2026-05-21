@@ -1,5 +1,4 @@
-from datetime import datetime
-import os, random, string
+import os, random
 from tqdm import tqdm
 import pandas as pd
 
@@ -32,7 +31,7 @@ class gen_HPAA_samples:
         random.seed(self.seed)
 
         # benign sentence b
-        self.b_pool = None  # stays None for Option A/B/C; populated for Option D
+        self.b_pool = None
         if args.benign_sentence_choice == "Given":
             self.b = args.benign
         else:
@@ -40,10 +39,8 @@ class gen_HPAA_samples:
             filepath = os.path.join(args.b_dataset_folder, filename)
             b_list = pd.read_csv(filepath, usecols = [args.benign])
             if args.toxic_sentence_choice == "Given":
-                # Option C: sample one benign, deterministic by seed
                 self.b = b_list[args.benign].sample(n=1, random_state=self.seed).item()
             else:
-                # Option D: store entire pool, sample per toxic sentence
                 self.b_pool = b_list[args.benign].tolist()
                 self.b = None  # will be set per iteration
         
@@ -114,7 +111,6 @@ class gen_HPAA_samples:
         if not words:
             return [""] * max(min_lines, 1)
 
-        # Start with default max line width and shrink until we have enough lines
         max_width = 40
         while max_width >= 1:
             b_prepare = self._wrap_words(words, max_width)
@@ -133,7 +129,6 @@ class gen_HPAA_samples:
 
     @staticmethod
     def _wrap_words(words, max_width):
-        """Break a word list into lines of at most max_width characters."""
         lines = []
         current_line = ""
         for word in words:
@@ -388,17 +383,3 @@ class gen_HPAA_samples:
             **{c: chr(0x24D0 + i) for i, c in enumerate("abcdefghijklmnopqrstuvwxyz")},
         }
         return precomposed_letters.get(c, c)
-
-    @staticmethod
-    def _generate_random_string(length=1000, ratio=0.9):
-        good_chars = string.ascii_lowercase + " "
-        bad_chars = ",.! "  # string.punctuation: '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-
-        result = []
-        for _ in range(length):
-            if random.random() < ratio:
-                result.append(random.choice(good_chars))
-            else:
-                result.append(random.choice(bad_chars))
-
-        return "".join(result)
