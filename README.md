@@ -218,3 +218,5 @@ For detailed instructions on reproducing the user study analyses (software requi
 
 - [`user_study/SurveyDataRound1/README.md`](user_study/SurveyDataRound1/README.md)
 - [`user_study/SurveyDataRound2/README.md`](user_study/SurveyDataRound2/README.md)
+
+Additional user study materials (survey instruments, consent forms, and study documentation) are permanently archived on OSF (Open Science Framework): https://osf.io/tn2vw/overview?view_only=af5cc0f70492497ca773b58155a333c2
