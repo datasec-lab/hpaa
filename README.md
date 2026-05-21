@@ -17,7 +17,7 @@ This repository contains the code and data for the paper:
 ├── src/
 │   ├── gen_HPAA.py          # Adversarial sample generation
 │   ├── eval_HPAA.py         # Detector evaluation
-│   ├── detectors.py         # 13 detector implementations
+│   ├── detectors.py         # detector implementations
 │   └── detectors.yaml       # Detector configurations & prompts
 ├── data/
 │   ├── toxic.Advbench_10.csv        # Toxic text dataset (249 samples)
