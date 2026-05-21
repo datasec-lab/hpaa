@@ -1,42 +1,214 @@
-## hpaa
+# HPAA
 
-### Modes
+This repository contains the code and data for the paper:
 
-- **Generation mode** (default)  
-  If `--file_eval` is **not** provided, the script generates HPAA samples and saves them to `--hpaa_folder`.
-
-- **Evaluation mode**  
-  If both `--file_eval` **and** `--detector_name` are provided, the script evaluates the specified file(s) using the selected detector.  
-  Note that `--file_eval` may include multiple files produced in Generation mode, but run Evaluation mode using a **single** detector specified by `--detector_name`.
+> **What the Eyes See, the LLMs Miss: Exploiting Human Perception for Adversarial Text Attacks**
 
 ---
 
-### Demo
+## Repository Structure
 
-Before using any detectors, make sure to update `.env` with your own API keys and install the dependencies listed in `requirements.txt`. Additionally, configure the `download_path` field in `./src/detectors.yaml` to specify where downloaded open-source models (e.g., Llama Guard 8B, ShieldGemma-2B, ShieldGemma-9B) should be stored.
-
-Run `run.sh` to see examples for generating HPAA samples or evaluating the generated samples.
-
-If you need to specify which GPU to use, you can set the environment variable before running the script.  
-For example, `env["CUDA_VISIBLE_DEVICES"] = "0"` specifies that GPU 0 should be used.
-
-The raw detector outputs will be saved, and these results are then aggregated to compute the final detection rate.
+```
+.
+├── HPAA.py                  # Main entry point (generation & evaluation)
+├── run.sh                   # Runnable examples for all options
+├── requirements.txt         # Python dependencies
+├── .env                     # API keys (fill in your own)
+├── src/
+│   ├── gen_HPAA.py          # Adversarial sample generation
+│   ├── eval_HPAA.py         # Detector evaluation
+│   ├── detectors.py         # 13 detector implementations
+│   └── detectors.yaml       # Detector configurations & prompts
+├── data/
+│   ├── toxic.Advbench_10.csv        # Toxic text dataset (249 samples)
+│   ├── benign.Hotel.csv             # Benign corpus: hotel reviews
+│   ├── benign.Movie.csv             # Benign corpus: movie reviews
+│   ├── benign.Restaurant.csv        # Benign corpus: restaurant reviews
+│   ├── benign.Music.csv             # Benign corpus: music reviews
+│   ├── benign.Product.csv           # Benign corpus: product reviews
+│   ├── Dataset_I.csv                # Phase I user study
+│   ├── Dataset_II.csv               # Phase II user study
+│   └── HED_top6.csv                 # Top-K Configurations Dataset
+├── user_study/                      # Raw user study data & analysis
+│   ├── SurveyDataRound1/
+│   └── SurveyDataRound2/
+└── HPAA/                            # Output folder for generated samples
+    └── demo.*.csv                   # Pre-generated demo outputs
+```
 
 ---
 
-### Datasets
+## Getting Started
 
-- **Short Toxic Text Dataset**  
-  Location: `./data/toxic.Advbench_10.csv`
+### 1. Environment Setup
 
-- **Benign Text Dataset**  
-  Location: `./data/benign.*.csv`
+```bash
+# Clone the repository
+git clone -b hpaa-submission https://github.com/yangqinue/hpaa.git
+cd hpaa
 
-- **User Study Dataset I**  
-  Location: `./data/Dataset_I.csv`
+# Install dependencies
+pip install -r requirements.txt
 
-- **User Study Dataset II**  
-  Location: `./data/Dataset_II.csv`
+# For local GPU detectors (Llama Guard, ShieldGemma), also install:
+# pip install torch>=2.0 transformers>=4.40 accelerate>=0.25
+```
 
-- **HED**
-  Location: `./data/HED_top6.csv`
+### 2. API Keys
+
+Copy `.env` and fill in your API keys:
+
+```bash
+cp .env .env.backup
+```
+
+Edit `.env` with your actual keys:
+
+```
+perspective_api_key = "YOUR_KEY"
+gemini_api_key      = "YOUR_KEY"
+openai_api_key      = "YOUR_KEY"
+enkryptai_api_key   = "YOUR_KEY"
+azure_api_key       = "YOUR_KEY"
+client_id           = "YOUR_AWS_ACCESS_KEY_ID"
+client_secret       = "YOUR_AWS_SECRET_ACCESS_KEY"
+```
+
+### 3. Local Model Weights
+
+For GPU-based detectors, download model weights and update `download_path` in `src/detectors.yaml`:
+
+```bash
+pip install huggingface_hub
+
+# Llama Guard (requires Meta approval: https://huggingface.co/meta-llama/Llama-Guard-3-8B)
+huggingface-cli download meta-llama/Llama-Guard-3-8B --local-dir /path/to/models/Llama-Guard-3-8B
+
+# ShieldGemma
+huggingface-cli download google/shieldgemma-2b --local-dir /path/to/models/shieldgemma-2b
+huggingface-cli download google/shieldgemma-9b --local-dir /path/to/models/shieldgemma-9b
+```
+
+Then set `download_path` in `src/detectors.yaml` to `/path/to/models/`.
+
+---
+
+## Usage
+
+The system operates in two modes: **generation** (create adversarial samples) and **evaluation** (test against detectors). See `run.sh` for full runnable examples.
+
+### Step 1: Generate Adversarial Samples
+
+Four options for specifying benign/toxic inputs:
+
+| | Toxic: user-specified | Toxic: from dataset |
+|---|---|---|
+| **Benign: user-specified** | Option A (1 sample) | Option B (N samples) |
+| **Benign: sampled from corpus** | Option C (1 sample) | Option D (N samples) |
+
+**Option D** (recommended for reproducing paper results):
+
+```bash
+python HPAA.py \
+  -bc Hotel -b text \
+  -tc Advbench_10 -t text \
+  -m M1 -l W -s Hi \
+  --seed 42 -p adv
+```
+
+Output: `./HPAA/adv.M1-W-Hi.csv` (249 samples — one per toxic sentence, each paired with a different randomly-sampled benign sentence)
+
+**Option A** (quick single-sample test):
+
+```bash
+python HPAA.py \
+  -bc Given -b "nice hotel expensive parking got good deal stay" \
+  -tc Given -t "YOU ARE WORTHLESS" \
+  -m M1 -l W -s Hi \
+  -p demo
+```
+
+### Step 2: Evaluate Against Detectors
+
+```bash
+EVAL_INPUT="./HPAA/adv.M1-W-Hi.csv"
+EVAL_PREFIX="exp1"
+
+# API detectors
+python HPAA.py -f $EVAL_INPUT -dn perspective_api    -ep $EVAL_PREFIX
+python HPAA.py -f $EVAL_INPUT -dn gemini-2.0-flash   -ep $EVAL_PREFIX
+python HPAA.py -f $EVAL_INPUT -dn omni-moderation-latest -ep $EVAL_PREFIX
+
+# Local GPU detectors
+python HPAA.py -f $EVAL_INPUT -dn Llama-Guard-3-8B   -ep $EVAL_PREFIX
+python HPAA.py -f $EVAL_INPUT -dn shieldgemma-2b     -ep $EVAL_PREFIX \
+  --tau 0.7 --bias_yes 0.2 --bias_no 0.0 --min_margin 0.0
+```
+
+Results are saved to `./HPAA/<eval_prefix>.<detector_name>.<timestamp>.csv`.
+
+---
+
+## Supported Detectors
+
+| Detector | Provider | Type | Notes |
+|---|---|---|---|
+| `perspective_api` | Google | API | Free tier available |
+| `gemini-2.0-flash` | Google | API | Free tier available |
+| `gemini-2.5-flash-lite` | Google | API | |
+| `omni-moderation-latest` | OpenAI | API | |
+| `gpt-4o` | OpenAI | API | |
+| `gpt-3.5-turbo` | OpenAI | API | |
+| `enkryptai` | EnkryptAI | API | |
+| `comprehend` | AWS | API | |
+| `azure_ai_content_safety_api` | Microsoft | API | |
+| `Llama-Guard-3-8B` | Meta | Local | ~16 GB VRAM |
+| `shieldgemma-2b` | Google | Local | ~5 GB VRAM |
+| `shieldgemma-9b` | Google | Local | ~18 GB VRAM |
+
+---
+
+## Using Your Own Datasets
+
+No code changes needed. Follow this naming convention:
+
+**Benign corpus:** save as `./data/benign.<Name>.csv` with a text column, then use:
+```bash
+-bc <Name> -b <column_name>
+```
+
+**Toxic corpus:** save as `./data/toxic.<Name>.csv` with a text column, then use:
+```bash
+-tc <Name> -t <column_name>
+```
+
+---
+
+## Artifact Evaluation — Quick Verification
+
+To quickly verify the main claims of the paper:
+
+```bash
+# 1. Generate adversarial samples (Option D, reproduces paper setup)
+python HPAA.py -bc Hotel -b text -tc Advbench_10 -t text \
+  -m M1 -l W -s Hi --seed 42 -p adv
+
+# 2. Evaluate (e.g., Perspective API — free tier, easiest to set up)
+python HPAA.py -f ./HPAA/adv.M1-W-Hi.csv -dn perspective_api -ep verify
+
+```
+
+To sweep all configurations tested in the paper, vary `-m` (M1–M6), `-l` (W, T, Mix), and `-s` (B, Col, Hi, Pre, Cap, Cloze).
+
+---
+
+## Datasets
+
+| Dataset | Location | Description |
+|---|---|---|
+| Toxic text | `data/toxic.Advbench_10.csv` | 249 toxic sentences |
+| Benign text | `data/benign.*.csv` | Hotel / Movie / Restaurant / Music / Product reviews |
+| User Study I | `data/Dataset_I.csv` | Phase I user study stimuli |
+| User Study II | `data/Dataset_II.csv` | Phase II user study stimuli |
+| HED | `data/HED_top6.csv` | Human Evaluation Dataset (top-6 configs) |
+| Survey data | `user_study/` | Raw survey responses and analysis notebooks |
