@@ -4,6 +4,10 @@ This repository contains the code and data for the paper:
 
 > **What the Eyes See, the LLMs Miss: Exploiting Human Perception for Adversarial Text Attacks**
 
+### Artifacts
+
+All artifacts are included in this repository, including implementation code, evaluation scripts, datasets, user study analysis notebooks, and survey instruments.
+
 ---
 
 ## Repository Structure
@@ -32,10 +36,12 @@ This repository contains the code and data for the paper:
 │   ├── Dataset_II.csv               # Phase II user study
 │   └── HED_top6.csv                 # Top-K Configurations Dataset
 ├── user_study/                      # Raw user study data & analysis
-│   ├── SurveyDataRound1/            # (see README.md inside)
-│   └── SurveyDataRound2/            # (see README.md inside)
+│   ├── Survey/                      # Survey instruments (PDFs)
+│   ├── SurveyDataRound1/           # (see README.md inside)
+│   └── SurveyDataRound2/           # (see README.md inside)
 └── HPAA/                            # Output folder for generated samples
-    └── *.csv                        # Pre-generated demo outputs
+    ├── optA.M1-W-Hi.csv             # Pre-generated demo (generation)
+    └── exp1.M1-W-Hi.perspective_api.csv  # Pre-generated demo (evaluation)
 ```
 
 ---
@@ -213,10 +219,11 @@ To sweep all configurations tested in the paper, vary `-m` (M1–M6), `-l` (W, T
 | User Study II | `data/Dataset_II.csv` | Phase II user study |
 | HED | `data/HED_top6.csv` | Human Evaluation Dataset (top-6 configs) |
 | Survey data | `user_study/` | Raw survey responses and analysis notebooks |
+| Survey instruments | `user_study/Survey/` | Survey questionnaire PDFs for Round I and Round II |
 
 For detailed instructions on reproducing the user study analyses (software requirements, how to run the notebooks, expected outputs), see the README files inside each folder:
 
 - [`user_study/SurveyDataRound1/README.md`](user_study/SurveyDataRound1/README.md)
 - [`user_study/SurveyDataRound2/README.md`](user_study/SurveyDataRound2/README.md)
 
-Additional user study materials (survey instruments, consent forms, and study documentation) are permanently archived on OSF (Open Science Framework): https://osf.io/tn2vw/overview?view_only=af5cc0f70492497ca773b58155a333c2
+User study survey instruments are included in [`user_study/Survey/`](user_study/Survey/).
