@@ -151,7 +151,3 @@ All PII has been removed and no re-identifiable information remains.
 The analysis procedures comply with the IRB protocol referenced in the paper, including secure storage, anonymization, and aggregated reporting.
 
 ---
-
-## 8. Contact (Anonymized)
-
-Per IEEE S&P double-blind policy, author contact information is omitted.
