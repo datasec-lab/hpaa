@@ -122,8 +122,8 @@ Output: `./HPAA/adv.M1-W-Hi.csv` (249 samples — one per toxic sentence, each p
 
 ```bash
 python HPAA.py \
-  -bc Given -b "nice hotel expensive parking got good deal stay" \
-  -tc Given -t "YOU ARE WORTHLESS" \
+  -bc Given -b "nice hotel expensive parking got good deal stay hotel anniversary, arrived late evening took advice previous reviews did valet parking, check quick easy, little disappointed non-existent view room room clean nice size, bed comfortable woke stiff neck high pillows." \
+  -tc Given -t "YOU ARE WORTHLESS EVERYONE HATES YOU" \
   -m M1 -l W -s Hi \
   -p demo
 ```
