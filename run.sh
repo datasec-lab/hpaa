@@ -86,16 +86,16 @@
 ##    with every toxic sentence from the dataset sequentially.
 ##    Output: ./HPAA/optD.M1-W-Hi.csv
 
-python HPAA.py \
-        --benign_sentence_choice Hotel \
-        --benign text \
-        --toxic_sentence_choice Advbench_10 \
-        --toxic text \
-        --mode M1 \
-        --granularity W \
-        --stylistic_transformation Hi \
-        --seed 42 \
-        --adv_prefix optD
+# python HPAA.py \
+#         --benign_sentence_choice Hotel \
+#         --benign text \
+#         --toxic_sentence_choice Advbench_10 \
+#         --toxic text \
+#         --mode M1 \
+#         --granularity W \
+#         --stylistic_transformation Hi \
+#         --seed 42 \
+#         --adv_prefix optD
 
 
 ## exmaple to run all configurations for Option D (uncomment to run):
@@ -162,44 +162,28 @@ python HPAA.py \
 #
 ###############################################################################
  
+## ────────────────────────────── Customize these variables ──────────────────────────────
+EVAL_INPUT="./HPAA/demo.M1-W-Hi.csv"   # the filename that you need to evaluate
+EVAL_PREFIX="exp1.M1-W-Hi"             # the prefix of the filename that you want to save
+## ───────────────────────────────────────────────────────────────────────────────────────
+ 
 ## API detector examples (uncomment to run):
- 
+
+API_NAME=perspective_api
+# API_NAME=gemini-2.0-flash
+# API_NAME=gemini-2.5-flash-lite
+# API_NAME=omni-moderation-latest
+# API_NAME=gpt-4o
+# API_NAME=gpt-3.5-turbo
+# API_NAME=enkryptai
+# API_NAME=comprehend
+# API_NAME=azure_ai_content_safety_api
+
 python HPAA.py \
-  --file_eval ./HPAA/optA.M1-W-Hi.csv \
-  --detector_name perspective_api
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name gemini-2.0-flash
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name gemini-2.5-flash-lite
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name omni-moderation-latest
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name gpt-4o
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name gpt-3.5-turbo
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name enkryptai
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name comprehend
- 
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name azure_ai_content_safety_api
- 
+  -f $EVAL_INPUT \
+  -dn $API_NAME \
+  -ep $EVAL_PREFIX
+
  
 ###############################################################################
 #  ── 2b. Local GPU Detectors ────────────────────────────────────────────────
@@ -236,25 +220,29 @@ python HPAA.py \
 #         python -c "import torch; print(torch.cuda.is_available())"
 #
 ###############################################################################
- 
+
 ## Local GPU detector examples (uncomment to run):
  
 # python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name Llama-Guard-3-8B
- 
-## Llama Guard with sampling parameters:
-# python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name Llama-Guard-3-8B \
-#   --do_sample --temperature 0.5 --top_p 0.5
+#   -f $EVAL_INPUT \
+#   -dn Llama-Guard-3-8B \
+#   -ep $EVAL_PREFIX
  
 # python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name shieldgemma-2b \
-#   --tau 0.7 --bias_yes 0.2 --bias_no 0.0 --min_margin 0.0
+#   -f $EVAL_INPUT \
+#   -dn Llama-Guard-3-8B \
+#   --do_sample --temperature 0.5 --top_p 0.5 \
+#   -ep $EVAL_PREFIX
  
 # python HPAA.py \
-#   --file_eval ./HPAA/optA.M1-W-Hi.csv \
-#   --detector_name shieldgemma-9b \
-#   --tau 0.7 --bias_yes 0.2 --bias_no 0.0 --min_margin 0.0
+#   -f $EVAL_INPUT \
+#   -dn shieldgemma-2b \
+#   --tau 0.7 --bias_yes 0.2 --bias_no 0.0 --min_margin 0.0 \
+#   -ep $EVAL_PREFIX
+ 
+# python HPAA.py \
+#   -f $EVAL_INPUT \
+#   -dn shieldgemma-9b \
+#   --tau 0.7 --bias_yes 0.2 --bias_no 0.0 --min_margin 0.0 \
+#   -ep $EVAL_PREFIX
+ 

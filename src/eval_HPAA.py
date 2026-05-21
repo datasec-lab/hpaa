@@ -16,6 +16,8 @@ class eval_HPAA_samples():
             x_eval.extend(df.x0.tolist())
         
         self.x_eval = x_eval
+        eval_prefix = getattr(args, "eval_prefix", "eval")
+        self.eval_prefix = eval_prefix
         self.model_name = args.detector_name
         
         print(f"\n>>> Loading config of {self.model_name} <<<\n")
@@ -74,7 +76,7 @@ class eval_HPAA_samples():
         current_time = datetime.now()
         current_time_formatted = current_time.strftime("%Y%m%d%H%M%S")
         
-        outpath = os.path.join(self.hpaa_folder, f"eval.{self.model_name}.{current_time_formatted}.csv")
+        outpath = os.path.join(self.hpaa_folder, f"{self.eval_prefix}.{self.model_name}.{current_time_formatted}.csv")
         df.to_csv(outpath, index=False)
     
     def _filter_detect_kwargs(self, overrides: Optional[Mapping[str, Any]]) -> Dict[str, Any]:

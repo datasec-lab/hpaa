@@ -15,8 +15,8 @@ from src.eval_HPAA import eval_HPAA
 
 # Built-in dataset names (benign / toxic).
 # To use your own dataset, place a CSV in --b_dataset_folder or --t_dataset_folder:
-#   Benign: benign.<YourName>.csv  (must contain the column 'text' by --benign)
-#   Toxic:  toxic.<YourName>.csv   (must contain the column 'text' by --toxic)
+#   Benign: benign.<YourName>.csv  (must contain the column specified by --benign)
+#   Toxic:  toxic.<YourName>.csv   (must contain the column specified by --toxic)
 # Then pass --benign_sentence_choice <YourName> or --toxic_sentence_choice <YourName>.
 BUILTIN_BENIGN = ["Hotel", "Movie", "Restaurant", "Music", "Product"]
 BUILTIN_TOXIC  = ["Advbench_10"]
@@ -121,6 +121,12 @@ def get_args():
         "-dn", "--detector_name",
         type=str, default=None,
         help="Detector to use for evaluation. Required with --file_eval."
+    )
+    parser.add_argument(
+        "-ep", "--eval_prefix",
+        type=str, default="eval",
+        help="Prefix for the evaluation output CSV filename.\n"
+             "Output: <hpaa_folder>/<eval_prefix>.<detector_name>.<timestamp>.csv"
     )
 
     # ── Detector hyperparameters ─────────────────────────────
