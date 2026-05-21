@@ -43,8 +43,7 @@ This repository contains the code and data for the paper:
 ### 1. Environment Setup
 
 ```bash
-# Clone the repository
-git clone -b hpaa-submission https://github.com/yangqinue/hpaa.git
+# Download the repository
 cd hpaa
 
 # Install dependencies
@@ -208,7 +207,7 @@ To sweep all configurations tested in the paper, vary `-m` (M1–M6), `-l` (W, T
 |---|---|---|
 | Toxic text | `data/toxic.Advbench_10.csv` | 249 toxic sentences |
 | Benign text | `data/benign.*.csv` | Hotel / Movie / Restaurant / Music / Product reviews |
-| User Study I | `data/Dataset_I.csv` | Phase I user study stimuli |
-| User Study II | `data/Dataset_II.csv` | Phase II user study stimuli |
+| User Study I | `data/Dataset_I.csv` | Phase I user study |
+| User Study II | `data/Dataset_II.csv` | Phase II user study |
 | HED | `data/HED_top6.csv` | Human Evaluation Dataset (top-6 configs) |
 | Survey data | `user_study/` | Raw survey responses and analysis notebooks |
