@@ -13,11 +13,13 @@ This repository contains the code and data for the paper:
 ├── HPAA.py                  # Main entry point (generation & evaluation)
 ├── run.sh                   # Runnable examples for all options
 ├── requirements.txt         # Python dependencies
-├── .env                     # API keys (fill in your own)
+├── .env.example             # API key template (copy to .env and fill in)
+├── LICENSE                  # MIT License
 ├── src/
+│   ├── __init__.py
 │   ├── gen_HPAA.py          # Adversarial sample generation
 │   ├── eval_HPAA.py         # Detector evaluation
-│   ├── detectors.py         # detector implementations
+│   ├── detectors.py         # Detector implementations
 │   └── detectors.yaml       # Detector configurations & prompts
 ├── data/
 │   ├── toxic.Advbench_10.csv        # Toxic text dataset (249 samples)
@@ -30,8 +32,8 @@ This repository contains the code and data for the paper:
 │   ├── Dataset_II.csv               # Phase II user study
 │   └── HED_top6.csv                 # Top-K Configurations Dataset
 ├── user_study/                      # Raw user study data & analysis
-│   ├── SurveyDataRound1/
-│   └── SurveyDataRound2/
+│   ├── SurveyDataRound1/           # (see README.md inside)
+│   └── SurveyDataRound2/           # (see README.md inside)
 └── HPAA/                            # Output folder for generated samples
     └── demo.*.csv                   # Pre-generated demo outputs
 ```
@@ -55,10 +57,10 @@ pip install -r requirements.txt
 
 ### 2. API Keys
 
-Copy `.env` and fill in your API keys:
+Copy `.env.example` to `.env` and fill in your API keys:
 
 ```bash
-cp .env .env.backup
+cp .env.example .env
 ```
 
 Edit `.env` with your actual keys:
@@ -211,3 +213,8 @@ To sweep all configurations tested in the paper, vary `-m` (M1–M6), `-l` (W, T
 | User Study II | `data/Dataset_II.csv` | Phase II user study |
 | HED | `data/HED_top6.csv` | Human Evaluation Dataset (top-6 configs) |
 | Survey data | `user_study/` | Raw survey responses and analysis notebooks |
+
+For detailed instructions on reproducing the user study analyses (software requirements, how to run the notebooks, expected outputs), see the README files inside each folder:
+
+- [`user_study/SurveyDataRound1/README.md`](user_study/SurveyDataRound1/README.md)
+- [`user_study/SurveyDataRound2/README.md`](user_study/SurveyDataRound2/README.md)
