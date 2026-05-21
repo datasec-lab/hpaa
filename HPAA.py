@@ -13,170 +13,135 @@ from src.eval_HPAA import eval_HPAA
 >>> 3. (Phase II User Study) -> H'      (Top-10 in H_top21, HPAA Configurations Set)
 """
 
+# Built-in dataset names (benign / toxic).
+# To use your own dataset, place a CSV in --b_dataset_folder or --t_dataset_folder:
+#   Benign: benign.<YourName>.csv  (must contain the column 'text' by --benign)
+#   Toxic:  toxic.<YourName>.csv   (must contain the column 'text' by --toxic)
+# Then pass --benign_sentence_choice <YourName> or --toxic_sentence_choice <YourName>.
+BUILTIN_BENIGN = ["Hotel", "Movie", "Restaurant", "Music", "Product"]
+BUILTIN_TOXIC  = ["Advbench_10"]
+
 
 def get_args():
-    b_choices = ["Hotel", "Movie", "Restaurant", "Music", "Product", "Given"]
-    b = "text" # use this when benign_sentence_choice is "Hotel" or "Movie" or "Restaurant" or "Music" or "Product"
-    # when benign_sentence_choice is "Given", an example of b:
-    b = "nice hotel expensive parking got good deal stay hotel anniversary, arrived late evening took advice previous reviews did valet parking, check quick easy, little disappointed non-existent view room room clean nice size, bed comfortable woke stiff neck high pillows, not soundproof like heard music room night morning loud bangs doors opening closing hear people talking hallway, maybe just noisy neighbors, aveda bath products nice, did not goldfish stay nice touch taken advantage staying longer, location great walking distance shopping, overall nice experience having pay 40 parking night"
+    parser = argparse.ArgumentParser(
+        description="HPAA: Generate or evaluate adversarial samples.",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
-    t_choices = ["Advbench_10", "Given"]
-    t = "str" # use this when when toxic_sentence_choice is "Advbench_10"
-    # when t is "Given", an example of t:
-    t = "YOU ARE WORTHLESS EVERYONE HATES YOU"
-        
-    parser = argparse.ArgumentParser()
-
+    # ── Folders ──────────────────────────────────────────────
     parser.add_argument(
         "-bf", "--b_dataset_folder",
-        type=str,
-        default="./data",
-        help="Folder for benign dataset (must exists)"
+        type=str, default="./data",
+        help="Folder for benign dataset (must exist)"
     )
-
     parser.add_argument(
         "-tf", "--t_dataset_folder",
-        type=str,
-        default="./data",
-        help="Folder for toxic dataset (must exists)"
+        type=str, default="./data",
+        help="Folder for toxic dataset (must exist)"
     )
-
     parser.add_argument(
         "-hf", "--hpaa_folder",
-        type=str,
-        default="./HPAA",
-        help="Folder for HPAA outputs (will be created if not exists)"
+        type=str, default="./HPAA",
+        help="Folder for HPAA outputs (created if not exists)"
     )
 
+    # ── Benign sentence ──────────────────────────────────────
     parser.add_argument(
         "-bc", "--benign_sentence_choice",
-        type=str,
-        choices=b_choices,
-        default="Given",
-        help=f"Benign Sentence choices, one of: {b_choices}"
+        type=str, default="Given",
+        help="'Given' = use the sentence in --benign directly.\n"
+             "Otherwise, name of a benign corpus: the code looks for\n"
+             "  <b_dataset_folder>/benign.<choice>.csv\n"
+             f"Built-in: {BUILTIN_BENIGN}\n"
+             "Custom:   place benign.<YourName>.csv in --b_dataset_folder"
     )
-    
     parser.add_argument(
         "-b", "--benign",
-        type=str,
-        default=None,
-        help="Benign Sentence b"
+        type=str, default=None,
+        help="When --benign_sentence_choice is 'Given': the benign sentence.\n"
+             "When using a corpus: the column name to read (e.g. 'text')."
     )
 
+    # ── Toxic sentence ───────────────────────────────────────
     parser.add_argument(
         "-tc", "--toxic_sentence_choice",
-        type=str,
-        choices=t_choices,
-        default="Given",
-        help=f"Toxic Sentence Choices, one of: {t_choices}"
+        type=str, default="Given",
+        help="'Given' = use the sentence in --toxic directly.\n"
+             "Otherwise, name of a toxic corpus: the code looks for\n"
+             "  <t_dataset_folder>/toxic.<choice>.csv\n"
+             f"Built-in: {BUILTIN_TOXIC}\n"
+             "Custom:   place toxic.<YourName>.csv in --t_dataset_folder"
     )
-
     parser.add_argument(
         "-t", "--toxic",
-        type=str,
-        default="",
-        help="Toxic Sentence t"
-    )
-    
-    parser.add_argument(
-        "-m", "--mode",
-        type=str,
-        choices=M,
-        default="M1",
-        help=f"Spatial Placement, one of: {M}"
-    )
-    
-    parser.add_argument(
-        "-l", "--granularity",
-        type=str,
-        choices=list(L.keys()),
-        default="W",
-        help="Granularity of typographic cues, choices: " +
-             ", ".join([f"{k} ({v})" for k, v in L.items()])
+        type=str, default="",
+        help="When --toxic_sentence_choice is 'Given': the toxic sentence.\n"
+             "When using a corpus: the column name to read (e.g. 'str')."
     )
 
+    # ── HPAA configuration (m, l, s) ────────────────────────
+    parser.add_argument(
+        "-m", "--mode",
+        type=str, choices=M, default="M1",
+        help=f"Spatial Placement, one of: {M}"
+    )
+    parser.add_argument(
+        "-l", "--granularity",
+        type=str, choices=list(L.keys()), default="W",
+        help="Granularity of typographic cues: " +
+             ", ".join([f"{k} ({v})" for k, v in L.items()])
+    )
     parser.add_argument(
         "-s", "--stylistic_transformation",
-        type=str,
-        choices=list(S.keys()),
-        default="Hi",
-        help="Stylistic transformation type, choices: " +
+        type=str, choices=list(S.keys()), default="Hi",
+        help="Stylistic transformation: " +
              ", ".join([f"{k} ({v})" for k, v in S.items()])
     )
 
+    # ── Output naming ────────────────────────────────────────
+    parser.add_argument(
+        "-p", "--adv_prefix",
+        type=str, default="adv",
+        help="Prefix for the output CSV filename.\n"
+             "Output: <hpaa_folder>/<adv_prefix>.<mode>-<gran>-<style>.csv"
+    )
+    parser.add_argument(
+        "--seed",
+        type=int, default=42,
+        help="Random seed for reproducibility (default: 42)"
+    )
+
+    # ── Evaluation ───────────────────────────────────────────
     parser.add_argument(
         "-f", "--file_eval",
-        type=str,
-        nargs="+",
-        default=None,
-        help="file names or paths; if None, skip HPAA generation"
+        type=str, nargs="+", default=None,
+        help="CSV file(s) to evaluate. If not provided, runs generation mode."
     )
-    
     parser.add_argument(
         "-dn", "--detector_name",
-        type=str,
-        default=None,
-        help="detector names or paths; if None, skip HPAA evaluation"
-    )
-    
-    parser.add_argument(
-        "--do_sample",
-        action="store_true",
-        default=None,
-        help="detector parameters: llama guard"
+        type=str, default=None,
+        help="Detector to use for evaluation. Required with --file_eval."
     )
 
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=None,
-        help="detector parameters: llama guard & gemini"
-    )
+    # ── Detector hyperparameters ─────────────────────────────
+    parser.add_argument("--do_sample", action="store_true", default=None,
+                        help="Detector param: Llama Guard")
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="Detector param: Llama Guard & Gemini")
+    parser.add_argument("--top_p", type=float, default=None,
+                        help="Detector param: Llama Guard & Gemini")
+    parser.add_argument("--tau", type=float, default=None,
+                        help="Detector param: ShieldGemma (tau > 0)")
+    parser.add_argument("--bias_yes", type=float, default=None,
+                        help="Detector param: ShieldGemma")
+    parser.add_argument("--bias_no", type=float, default=None,
+                        help="Detector param: ShieldGemma")
+    parser.add_argument("--min_margin", type=float, default=None,
+                        help="Detector param: ShieldGemma")
+    parser.add_argument("--top_k", type=float, default=None,
+                        help="Detector param: Gemini")
 
-    parser.add_argument(
-        "--top_p",
-        type=float,
-        default=None,
-        help="detector parameters: llama guard & gemini"
-    )
-
-    parser.add_argument(
-        "--tau",
-        type=float,
-        default=None,
-        help="detector parameters: gemma & phi-2 (tau > 0)"
-    )
-
-    parser.add_argument(
-        "--bias_yes",
-        type=float,
-        default=None,
-        help="detector parameters: gemma & phi-2"
-    )
-
-    parser.add_argument(
-        "--bias_no",
-        type=float,
-        default=None,
-        help="detector parameters: gemma & phi-2"
-    )
-
-    parser.add_argument(
-        "--min_margin",
-        type=float,
-        default=None,
-        help="detector parameters: gemma & phi-2"
-    )
-
-    parser.add_argument(
-        "--top_k",
-        type=float,
-        default=None,
-        help="detector parameters: gemini"
-    )
-    
     args = parser.parse_args()
-    
     return args
 
 
@@ -193,4 +158,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

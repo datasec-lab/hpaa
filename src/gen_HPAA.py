@@ -2,7 +2,6 @@ from datetime import datetime
 import os, random, string
 from tqdm import tqdm
 import pandas as pd
-random.seed(42)
 
 
 M = ["M1", "M2", "M3", "M4", "M5", "M6"] # Spatial Placement
@@ -28,14 +27,25 @@ def gen_HPAA(args):
 
 class gen_HPAA_samples:
     def __init__(self, args):
+        # random seed
+        self.seed = getattr(args, "seed", 42)
+        random.seed(self.seed)
+
         # benign sentence b
+        self.b_pool = None  # stays None for Option A/B/C; populated for Option D
         if args.benign_sentence_choice == "Given":
             self.b = args.benign
         else:
             filename = f"benign.{args.benign_sentence_choice}.csv"
             filepath = os.path.join(args.b_dataset_folder, filename)
             b_list = pd.read_csv(filepath, usecols = [args.benign])
-            self.b = b_list[args.benign].sample(n=1).item()
+            if args.toxic_sentence_choice == "Given":
+                # Option C: sample one benign, deterministic by seed
+                self.b = b_list[args.benign].sample(n=1, random_state=self.seed).item()
+            else:
+                # Option D: store entire pool, sample per toxic sentence
+                self.b_pool = b_list[args.benign].tolist()
+                self.b = None  # will be set per iteration
         
         # toxic sentence t
         if args.toxic_sentence_choice == "Given":
@@ -53,16 +63,24 @@ class gen_HPAA_samples:
         self.config_str = f"{self.m}-{self.l}-{self.s}"
         
         # output
+        adv_prefix = getattr(args, "adv_prefix", "adv")
         self.save_prefix = os.path.join(
             args.hpaa_folder,
-            f"{self.config_str}",
+            f"{adv_prefix}.{self.config_str}",
         )
         self.save_csv = self.save_prefix + ".csv"
+
+    def _get_benign(self, idx):
+        if self.b_pool is not None:
+            rng = random.Random(self.seed + idx)
+            return rng.choice(self.b_pool)
+        return self.b
 
     def generate_adv_samples(self) -> None:
         results = []
         for idx, t in tqdm(list(enumerate(self.t)), total=len(self.t)):
-            b_prepare, t_prepare = self.apply_l(self.b, t)
+            b = self._get_benign(idx)
+            b_prepare, t_prepare = self.apply_l(b, t)
             c = self.apply_m(b_prepare, t_prepare)
             x = self.apply_s(c)
             x0 = x.replace("\n", " ")
@@ -72,7 +90,7 @@ class gen_HPAA_samples:
             
             result = {}
             result["idx"] = idx
-            result["b"] = self.b
+            result["b"] = b
             result["t"] = t
             result["c"] = c
             result["x"] = x
@@ -84,29 +102,52 @@ class gen_HPAA_samples:
         results.to_csv(f"{self.save_csv}", index=False)
     
     def apply_l(self, b, t):
-        b_prepare = self._break_to_lines(b)
         t_prepare = [
             self._split_word_to_fragments(word)
             for word in t.strip().split()
         ]
+        b_prepare = self._break_to_lines(b, min_lines=len(t_prepare))
         return b_prepare, t_prepare
     
-    def _break_to_lines(self, b):
+    def _break_to_lines(self, b, min_lines=1):
         words = b.lower().split()
-        b_prepare = []
-        current_line = ""
+        if not words:
+            return [""] * max(min_lines, 1)
 
+        # Start with default max line width and shrink until we have enough lines
+        max_width = 40
+        while max_width >= 1:
+            b_prepare = self._wrap_words(words, max_width)
+            if len(b_prepare) >= min_lines:
+                return b_prepare
+            max_width = max_width // 2
+        
+        b_prepare = [""] * min_lines
+        for i, w in enumerate(words):
+            line_idx = i % min_lines
+            if b_prepare[line_idx]:
+                b_prepare[line_idx] += " " + w
+            else:
+                b_prepare[line_idx] = w
+        return b_prepare
+
+    @staticmethod
+    def _wrap_words(words, max_width):
+        """Break a word list into lines of at most max_width characters."""
+        lines = []
+        current_line = ""
         for word in words:
-            if (len(current_line) + len(word) + (1 if current_line else 0) <= 40):
+            if len(current_line) + len(word) + (1 if current_line else 0) <= max_width:
                 if current_line:
                     current_line += " "
                 current_line += word
             else:
-                b_prepare.append(current_line)
+                if current_line:
+                    lines.append(current_line)
                 current_line = word
         if current_line:
-            b_prepare.append(current_line)
-        return b_prepare
+            lines.append(current_line)
+        return lines
 
     def _split_word_to_fragments(self, word):
         word = word.strip('"').upper()

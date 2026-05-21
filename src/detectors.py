@@ -1,27 +1,54 @@
 from typing import Literal, Optional, Union, Any, Dict, Mapping
 import pandas as pd
 import numpy as np
-import os, json, time, sys, argparse, yaml, re, inspect, random, botocore
+import os, json, time, sys, argparse, yaml, re, inspect, random
 from functools import wraps
 from pathlib import Path
 from datetime import datetime
 
-import torch
-import torch._dynamo
-torch._dynamo.config.cache_size_limit = 64
-import torch.nn.functional as F
-import transformers
-from torch.nn.functional import softmax
+# Heavy ML imports are deferred to classes that need them (model_pipeline, model_regular).
+# This allows API-based detectors to work without torch/transformers installed.
+torch = None
+transformers = None
+F = None
+softmax = None
 
+def _ensure_torch():
+    """Lazy-load torch and transformers on first use."""
+    global torch, transformers, F, softmax
+    if torch is None:
+        import torch as _torch
+        torch = _torch
+        torch._dynamo.config.cache_size_limit = 64
+        import torch.nn.functional as _F
+        F = _F
+        from torch.nn.functional import softmax as _softmax
+        softmax = _softmax
+        import transformers as _transformers
+        transformers = _transformers
+
+import botocore
 import openai
 import boto3
 import requests
 from openai import OpenAI
-from googleapiclient import discovery
-from googleapiclient.errors import HttpError
-from azure.ai.contentsafety import ContentSafetyClient
-from azure.ai.contentsafety.models import AnalyzeTextOptions
-from azure.core.credentials import AzureKeyCredential
+
+# Optional API client imports — gracefully handle missing packages
+try:
+    from googleapiclient import discovery
+    from googleapiclient.errors import HttpError
+except ImportError:
+    discovery = None
+    HttpError = Exception
+
+try:
+    from azure.ai.contentsafety import ContentSafetyClient
+    from azure.ai.contentsafety.models import AnalyzeTextOptions
+    from azure.core.credentials import AzureKeyCredential
+except ImportError:
+    ContentSafetyClient = None
+    AnalyzeTextOptions = None
+    AzureKeyCredential = None
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -231,6 +258,7 @@ def _chunk_by_bytes(text: str, limit: int = BYTE_LIMIT):
 
 class model_pipeline:
     def __init__(self, model_name: str, download_path: str):
+        _ensure_torch()
         self.model_name = model_name
         self.model_id = os.path.join(download_path, model_name)
         self.pipeline = transformers.pipeline(
@@ -341,6 +369,7 @@ class model_pipeline:
 
 class model_regular:
     def __init__(self, model_name: str, download_path: str, classification_models: list[str]):
+        _ensure_torch()
         self.model_name = model_name
         self.classification_models = set(classification_models)
         self.model_id = os.path.join(download_path, model_name)
@@ -512,16 +541,16 @@ class model_api:
             self.comprehend = boto3.client(
                 service_name="comprehend",
                 region_name="us-east-1",
-                aws_access_key_id=Client_ID,
-                aws_secret_access_key=Client_secret
+                aws_access_key_id=client_id,
+                aws_secret_access_key=client_secret
             )
 
         elif "titan" in name:
             self.bedrock = boto3.client(
                 service_name="bedrock-runtime",
                 region_name="us-east-1",
-                aws_access_key_id=Client_ID,
-                aws_secret_access_key=Client_secret
+                aws_access_key_id=client_id,
+                aws_secret_access_key=client_secret
             )
 
         elif name == "enkryptai":
@@ -728,11 +757,13 @@ class model_api:
                 try:
                     r = requests.post(self.url, headers=self.headers, json=payload)
                     scores = r.json()["details"]["toxicity"]
-                    avg = sum(scores.values()) / len(scores)
+                    # Filter to numeric values only (exclude compliance_mapping etc.)
+                    numeric_scores = {k: v for k, v in scores.items() if isinstance(v, (int, float))}
+                    avg = sum(numeric_scores.values()) / len(numeric_scores) if numeric_scores else 0.0
                     verdict = "UNSAFE" if avg > threshold else "SAFE"
                     score = {"verdict": verdict, "numerial_label": 1 if verdict == "UNSAFE" else 0, "raw": json.loads(r.text)}
-                    scores.update(score)
-                    return scores
+                    numeric_scores.update(score)
+                    return numeric_scores
                 except Exception as e:
                     print("Error parsing response:", e)
                     try:
@@ -752,7 +783,7 @@ class model_api:
                     TextSegments=[{"Text": ch}],
                     LanguageCode="en",
                 )
-            except botocore.exceptionsClientError as e:
+            except botocore.exceptions.ClientError as e:
                 return {
                     "error": str(e),
                     "score": None,
@@ -798,4 +829,3 @@ def timeit(func):
         print(f">>> timer ends <<< {func.__name__} is finisheed, duration is {duration:.4f} seconds.")
         return result
     return wrapper
-

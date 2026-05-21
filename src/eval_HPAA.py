@@ -25,8 +25,8 @@ class eval_HPAA_samples():
         self.call_type = self.model_configs["models"][self.model_name]["call_type"]
         
         # model init
-        self.model_init()
         self.classification_models = ["shieldgemma-2b", "shieldgemma-9b"]
+        self.model_init()
         
         params = (
             "do_sample", "temperature", "top_p", "top_k",
