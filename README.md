@@ -15,6 +15,8 @@ All artifacts are included in this repository, including implementation code, ev
 ```
 .
 ├── HPAA.py                  # Main entry point (generation & evaluation)
+├── quick_test.sh            # Reproduce all main paper results end-to-end
+├── quick_test.py            # Summarize evasion rates (1-shot & 3-shot) from results
 ├── run.sh                   # Runnable examples for all options
 ├── requirements.txt         # Python dependencies
 ├── .env.example             # API key template (copy to .env and fill in)
@@ -154,6 +156,26 @@ python HPAA.py -f $EVAL_INPUT -dn shieldgemma-2b     -ep $EVAL_PREFIX \
 
 Results are saved to `./HPAA/<eval_prefix>.<detector_name>.<timestamp>.csv`.
 
+### Step 3: Quick Test — Reproduce Paper Results
+
+`quick_test.sh` reproduces Table 2, Figure 5 (1-shot & 3-shot evasion), and Figure 6 / Table 3 / Table 6 (threshold sweep) using Perspective API.
+
+```bash
+conda activate hpaa
+
+# Generate adversarial samples (skip if pre-generated files already exist in HPAA/)
+bash quick_test.sh gen
+
+# Evaluate a random subset for a quick check (e.g. 10 samples, uses seed 42)
+bash quick_test.sh eval 10
+
+# Or evaluate — full dataset (249 samples per config)
+bash quick_test.sh eval
+
+# Summarize results: prints per-file evasion rates, 1-shot (Table 2), and 3-shot (Figure 5)
+python quick_test.py
+```
+
 ---
 
 ## Supported Detectors
@@ -193,19 +215,27 @@ No code changes needed. Follow this naming convention:
 
 ## Artifact Evaluation — Quick Verification
 
-To quickly verify the main claims of the paper:
+To reproduce the main paper results (Table 2, Figure 5, Figure 6):
 
 ```bash
-# 1. Generate adversarial samples (Option D, reproduces paper setup)
-python HPAA.py -bc Hotel -b text -tc Advbench_10 -t text \
-  -m M1 -l W -s Hi --seed 42 -p adv
-
-# 2. Evaluate (e.g., Perspective API — free tier, easiest to set up)
-python HPAA.py -f ./HPAA/adv.M1-W-Hi.csv -dn perspective_api -ep verify
-
+# Requires: perspective_api_key set in .env
+bash quick_test.sh all        # generate + evaluate full dataset (~249 samples × 18 runs)
+python quick_test.py          # print 1-shot and 3-shot evasion rates
 ```
 
-To sweep all configurations tested in the paper, vary `-m` (M1–M6), `-l` (W, T, Mix), and `-s` (B, Col, Hi, Pre, Cap, Cloze).
+For a fast end-to-end sanity check (10 random samples, ~3 minutes):
+
+```bash
+bash quick_test.sh all 10
+python quick_test.py
+```
+
+To test other detectors, use `HPAA.py` directly with `-dn <detector_name>` and optionally `-n <N>` to limit samples:
+
+```bash
+python HPAA.py -f ./HPAA/optD.Hotel.Advbench_10.M6-W-Hi.csv \
+  -dn gemini-2.0-flash -ep verify -n 10
+```
 
 ---
 

@@ -10,11 +10,16 @@ class eval_HPAA_samples():
         self.file_eval = args.file_eval
         self.hpaa_folder = args.hpaa_folder
         
+        n_samples = getattr(args, "n_samples", None)
+        seed = getattr(args, "seed", 42)
+
         x_eval = []
         for idx, filename in enumerate(self.file_eval):
             df = pd.read_csv(filename)
+            if n_samples is not None and n_samples < len(df):
+                df = df.sample(n=n_samples, random_state=seed)
             x_eval.extend(df.x0.tolist())
-        
+
         self.x_eval = x_eval
         eval_prefix = getattr(args, "eval_prefix", "eval")
         self.eval_prefix = eval_prefix

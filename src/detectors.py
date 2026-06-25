@@ -404,7 +404,12 @@ class model_api:
                 categories=["Hate", "SelfHarm", "Sexual", "Violence"]
             )
             response = self.client.analyze_text(request)
-            return response
+            return {
+                "categoriesAnalysis": [
+                    {"category": item.category, "severity": item.severity}
+                    for item in response.categories_analysis
+                ]
+            }
 
         if "gpt" in name or name == "omni-moderation-latest":
             retries = 0

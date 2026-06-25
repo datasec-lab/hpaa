@@ -125,6 +125,12 @@ def get_args():
         help="Prefix for the evaluation output CSV filename.\n"
              "Output: <hpaa_folder>/<eval_prefix>.<detector_name>.<timestamp>.csv"
     )
+    parser.add_argument(
+        "-n", "--n_samples",
+        type=int, default=None,
+        help="Randomly sample N rows from each input file before evaluation.\n"
+             "Uses --seed for reproducibility. Default: use all rows."
+    )
 
     # ── Detector hyperparameters ─────────────────────────────
     parser.add_argument("--do_sample", action="store_true", default=None,
